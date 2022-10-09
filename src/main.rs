@@ -4,7 +4,13 @@ use std::{borrow::Borrow, fs::File};
 use exif::{self, Exif, Tag};
 
 fn main() -> Result<(), exif::Error> {
-    let path = std::path::PathBuf::from("/Users/chris/Desktop/10-08-inversion.jpg");
+    let path = match std::env::args().nth(1) {
+        Some(path) => path,
+        None => {
+            eprintln!("You have to supply a path!");
+            std::process::exit(1);
+        }
+    };
     let fd = File::open(&path)?;
     let mut reader = BufReader::new(&fd);
     let ForTable {
@@ -59,7 +65,8 @@ impl From<&Exif> for ForTable {
         let lens = get_field(exif, Tag::LensModel).replace("\"", "");
         let exposure = get_field(exif, Tag::ExposureTime);
         let f_number = get_field(exif, Tag::FNumber).replace("f", "𝑓");
-        let iso = String::from("ISO ") + &get_field(exif, Tag::PhotographicSensitivity);
+        let iso = String::from("<span class=\"smcp\">ISO</span> ")
+            + &get_field(exif, Tag::PhotographicSensitivity);
 
         ForTable {
             make,
