@@ -11,7 +11,7 @@ fn main() -> Result<(), exif::Error> {
             std::process::exit(1);
         }
     };
-    let fd = File::open(&path)?;
+    let fd = File::open(path)?;
     let mut reader = BufReader::new(&fd);
     let ForTable {
         make,
@@ -51,10 +51,11 @@ struct ForTable {
 impl From<&Exif> for ForTable {
     fn from(exif: &Exif) -> Self {
         let make = get_field(exif, Tag::Make)
-            .replace("\"", "")
+            .replace('\"', "")
             .replace("SONY", "Sony");
 
-        let model = match get_field(exif, Tag::Model).replace("\"", "").as_str() {
+        let model = match get_field(exif, Tag::Model).replace('\"', "").as_str() {
+            "ILCE-7RM5" => "α7R V",
             "ILCE-7RM4" => "α7R IV",
             "ILCE-7M4" => "α7 IV",
             "ILCE-7C" => "α7C",
@@ -62,9 +63,9 @@ impl From<&Exif> for ForTable {
         }
         .into();
 
-        let lens = get_field(exif, Tag::LensModel).replace("\"", "");
+        let lens = get_field(exif, Tag::LensModel).replace('\"', "");
         let exposure = get_field(exif, Tag::ExposureTime);
-        let f_number = get_field(exif, Tag::FNumber).replace("f", "𝑓");
+        let f_number = get_field(exif, Tag::FNumber).replace('f', "𝑓");
         let iso = String::from("<span class=\"smcp\">ISO</span> ")
             + &get_field(exif, Tag::PhotographicSensitivity);
 
@@ -81,7 +82,7 @@ impl From<&Exif> for ForTable {
 
 fn get_field(exif: &Exif, tag: Tag) -> String {
     exif.get_field(tag, exif::In::PRIMARY)
-        .expect(&format!("Missing field {tag}"))
+        .unwrap_or_else(|| panic!("Missing field {tag}"))
         .display_value()
         .with_unit(exif)
         .to_string()
